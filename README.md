@@ -25,6 +25,7 @@ python3 main.py
 
 Send POST or GET HTTP calls to facade service. GET call doesn't have any params,   
 POST call must contain json body with "message" field: ```{"message": "hi"}```.
-Example of use and output:
+Example of use and output:   
+![alt text](https://github.com/hkoziak/microservices_apz/blob/micro_basics/Example_of_use.png?raw=true)
 
 
