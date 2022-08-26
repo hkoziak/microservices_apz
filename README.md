@@ -1,6 +1,10 @@
 # Lab work 1: microservices basics
 Authors (team): [Halyna Koziak](https://github.com/hkoziak)
 
+### Report
+1-2 tasks done:
+![alt text](https://github.com/hkoziak/microservices_apz/blob/micro_basics/tasks1_2.png?raw=true)
+
 ### Before
 
 You need to have <b>Flask</b> package installed and <b>Python 3</b> for running this app.   
