@@ -3,7 +3,7 @@ Authors (team): [Halyna Koziak](https://github.com/hkoziak)
 
 ### Report
 1-2 tasks done:
-![alt text](https://github.com/hkoziak/microservices_apz/blob/micro_basics/tasks1_2.png?raw=true)
+![alt text](https://github.com/hkoziak/microservices_apz/blob/micro_hz/tasks1_2.png?raw=true)
 
 ### Before
 
