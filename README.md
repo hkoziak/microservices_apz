@@ -30,3 +30,13 @@ Results are like this:
 ![alt text](https://github.com/hkoziak/microservices_apz/blob/hazelcast_lab/report_images/task4_no_blocking.png?raw=true)
 
 **5 task:** 
+Code is located in folder task5.
+
+1 writing, 2 reading: values are taken from very fast because there are more agents that do writing;
+
+queue is full - writing stops and awaits for a free place in a queue.
+
+reading is independent, texts are not assigned for particular reader and get to the first-best.
+![alt text](https://github.com/hkoziak/microservices_apz/blob/hazelcast_lab/report_images/task5_reading1.png?raw=true)
+![alt text](https://github.com/hkoziak/microservices_apz/blob/hazelcast_lab/report_images/task5_reading2.png?raw=true)
+![alt text](https://github.com/hkoziak/microservices_apz/blob/hazelcast_lab/report_images/task5_writing.png?raw=true)
