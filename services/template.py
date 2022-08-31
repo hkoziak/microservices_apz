@@ -17,6 +17,8 @@ LOGGING_SERVICE_PORT = 3001
 MESSAGE_SERVICE_HOST = "127.0.0.1"
 MESSAGE_SERVICE_PORT = 3002
 
+STORAGE_NODE_FOR_1 = "127.0.0.1:5701"
+
 
 def beautify_address(host, port):
     return f"http://{host}:{port}/"
