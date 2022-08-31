@@ -4,7 +4,7 @@ import requests
 
 class Client:
     def __init__(self):
-        self.url = beautify_address(FACADE_SERVICE_HOST,FACADE_SERVICE_PORT)
+        self.url = beautify_address(FACADE_SERVICE_HOST, FACADE_SERVICE_PORT)
 
     def post_message(self, msg):
         info = {"message": msg}

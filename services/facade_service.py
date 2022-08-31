@@ -24,11 +24,11 @@ class FacadeService(ServiceTemplate):
         @self.app.route("/", methods=['POST', 'GET'])
         def facade():
             if request.method == 'GET':
-                part1 = self.get_request(self.message_service)
+                part1 = self.get_request(self.message_service, "Message")
                 try:
                     while True:
                         log_service = random.choice(self.logging_services)
-                        part2 = self.get_request(log_service)
+                        part2 = self.get_request(log_service, "Log")
                         if part2.status_code == self.success:
                             break
                         else:

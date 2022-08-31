@@ -1,14 +1,14 @@
 from template import ServiceTemplate, FACADE_SERVICE_HOST, FACADE_SERVICE_PORT, LOGGING_SERVICE_HOST, \
     LOGGING_SERVICE_PORT, STORAGE_NODE_FOR_1, beautify_address
 from flask import request, make_response
-from msg_tool.msg_storage import MessageStorage, ServiceNotAvailable, DistributedMap
+from msg_tool.msg_storage import ServiceNotAvailable, DistributedMap
 import sys
 
 
 class LoggingServer(ServiceTemplate):
     def __init__(self, n, node):
         super().__init__("LoggingService"+str(n))
-        self.storage = DistributedMap(node)
+        self.storage = DistributedMap(node, "HZ_map")
         self.facade_service = None
 
         @self.app.route("/", methods=['POST', 'GET'])
@@ -39,10 +39,12 @@ class LoggingServer(ServiceTemplate):
 def main():
     if len(sys.argv) == 1:
         service = LoggingServer(1, STORAGE_NODE_FOR_1)
-    elif len(sys.argv) == 3:
+        port = LOGGING_SERVICE_PORT
+    elif len(sys.argv) == 4:
         service = LoggingServer(sys.argv[1], sys.argv[2])
+        port = sys.argv[3]
     service.add_facade_service(beautify_address(FACADE_SERVICE_HOST, FACADE_SERVICE_PORT))
-    service.run(LOGGING_SERVICE_HOST, LOGGING_SERVICE_PORT)
+    service.run(LOGGING_SERVICE_HOST, port)
 
 
 if __name__ == "__main__":
