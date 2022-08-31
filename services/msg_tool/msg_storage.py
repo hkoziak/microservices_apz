@@ -55,3 +55,26 @@ class DistributedMap:
             print(err)
             raise ServiceNotAvailable
 
+
+class DistributedQueue:
+    def __init__(self):
+        try:
+            self.hz = hazelcast.HazelcastClient()
+            self.queue = self.hz.get_queue("my-mq").blocking()
+        except hazelcast.errors.IllegalStateError:
+            raise ServiceNotAvailable
+
+    def get_data(self):
+        if self.queue is None:
+            raise ServiceNotAvailable
+        return self.queue.poll()
+
+    def put_data(self, msg):
+        if self.queue is None:
+            raise ServiceNotAvailable
+        self.queue.put(msg)
+
+    def is_empty(self):
+        if self.queue is None:
+            raise ServiceNotAvailable
+        return self.queue.is_empty()
