@@ -64,12 +64,12 @@ class DistributedQueue:
         except hazelcast.errors.IllegalStateError:
             raise ServiceNotAvailable
 
-    def get_data(self):
+    def get_msg(self):
         if self.queue is None:
             raise ServiceNotAvailable
         return self.queue.poll()
 
-    def put_data(self, msg):
+    def put_msg(self, msg):
         if self.queue is None:
             raise ServiceNotAvailable
         self.queue.put(msg)
