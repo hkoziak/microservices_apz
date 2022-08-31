@@ -33,6 +33,6 @@ Example of use and output:
 ![alt text](https://github.com/hkoziak/microservices_apz/blob/micro_basics/Example_of_use.png?raw=true)
 
 **Updated:**
-![alt text](https://github.com/hkoziak/microservices_apz/blob/micro_mq/run.png?raw=true)
+![alt text](https://github.com/hkoziak/microservices_apz/blob/micro_mq/run1.png?raw=true)
 
 
