@@ -6,7 +6,7 @@ class MessageStorage:
         self.storage = {}
 
     def save_msg(self, uuid, msg):
-        if uuid not in self.map.keys():
+        if uuid not in self.storage.keys():
             self.storage[uuid] = msg
         raise KeyError("Such id already exists")
 

@@ -14,11 +14,11 @@ class MessageService(ServiceTemplate):
         self.storage = MessageStorage()
         self.queue = DistributedQueue()
         self.id_for_msq = 500
+        self.off = False
         self.queue_msg = Thread(target=self.post_msg)
         self.queue_msg.daemon = True
         self.queue_msg.start()
         self.success = 200
-        self.off = False
 
         @self.app.route("/", methods=['POST', 'GET'])
         def message():
