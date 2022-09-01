@@ -7,18 +7,16 @@ You need to have <b>Flask</b> package installed and <b>Python 3</b> for running 
 You may use client in terminal (described below), Postman or other service.
 
 ### Launching
-Launch 3 hazelcast nodes. You have to pass the number of node and the address of storage node and port for logging service to each separate logging service.
-If running on localhost, the first logging service will pick-up number and node automatically.
-Example of run of the logging service:   
-```python3 services/logging_service.py 2 127.0.0.1:5702 3002```   
-Launch Message service. When launching first one you don't need extra params, when launching next you should pass the service number and port:   
-```python3 services/message_service.py 2 3005```   
-Launch Facade service passing adresses of logging services. **Separate them with coma, not whitespace, and include ```http://```**:
+Launch 3 hazelcast nodes.
+Python package for Consul can be installed with ```pip3 install python-consul```
+Then launch **setup.py**. 
 ```
-python3 services/facade_service.py http://127.0.0.1:3001,http://127.0.0.1:3003,http://127.0.0.1:3004
+python3 services/setup.py
 ```
-  
-You may change pre-defined hosts and ports in file <b>services/template.py</b>.
+Then launch message, logging and facade services, providing as args number of this service, host and port separated with whitespaces:   
+```
+python3 services/logging_service.py 2 127.0.0.1 3002
+```
 
 To run a client in terminal window use the next command:
 ```
