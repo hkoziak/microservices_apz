@@ -59,7 +59,7 @@ class DistributedMap:
 class DistributedQueue:
     def __init__(self):
         try:
-            self.hz = hazelcast.HazelcastClient()
+            self.hz = hazelcast.HazelcastClient(cluster_connect_timeout=100)
             self.queue = self.hz.get_queue("my-mq").blocking()
         except hazelcast.errors.IllegalStateError:
             raise ServiceNotAvailable

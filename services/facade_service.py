@@ -1,5 +1,4 @@
-from template import ServiceTemplate, FACADE_SERVICE_HOST, FACADE_SERVICE_PORT, LOGGING_SERVICE_HOST, \
-    LOGGING_SERVICE_PORT, MESSAGE_SERVICE_HOST, MESSAGE_SERVICE_PORT, beautify_address
+from template import ServiceTemplate
 from flask import request, make_response
 from threading import Thread
 from msg_tool.msg_storage import ServiceNotAvailable, DistributedQueue
@@ -7,29 +6,36 @@ import requests
 import time
 import random
 import sys
+import consul
 
 
 class FacadeService(ServiceTemplate):
-    def __init__(self):
-        super().__init__("FacadeService")
-        self.logging_services, self.log_services_off = [], []
-        self.message_services, self.msg_services_off = [], []
+    def __init__(self, n, host, port):
+        super().__init__("FacadeService" + str(n), host, port)
+        self.consul = consul.Consul()
+        self.log_services, self.msg_services = [], []
+        self.log_quant, self.msg_quant = 0, 0
+        self.uuid = 100
+        self.queue_name = None
         self.turn_off = False
         self.uuid = 100
+        self.internal_error = 500
+        self.success = 200
+        self.register()
+        self.register_log_msg()
+        self.get_queue_name()
+        self.queue = DistributedQueue(self.queue_name)
         self.updater = Thread(target=self.update_log_services)
         self.updater.daemon = True
         self.updater.start()
-        self.internal_error = 500
-        self.success = 200
-        self.queue = DistributedQueue()
 
         @self.app.route("/", methods=['POST', 'GET'])
         def facade():
             if request.method == 'GET':
                 part1 = self.get_from_msg_server()
                 part2 = self.get_from_log_server()
-                if part1.status_code != self.success or part2.status_code != 200:
-                    return make_response("Internal Server Error", self.internal_error)
+                if part1.status_code != self.success or part2.status_code != self.success:
+                    return make_response("Something went wrong", self.internal_error)
                 text = part2.text + part1.text
                 return make_response(text, self.success)
             elif request.method == 'POST':
@@ -40,45 +46,21 @@ class FacadeService(ServiceTemplate):
                     return make_response("Internal Server Error", self.internal_error)
                 return part1
 
+        @self.app.route("/health", methods=['GET'])
+        def health():
+            return make_response("healthy", self.success)
+
     def update_log_services(self):
         while not self.turn_off:
             time.sleep(5)
-            restored = []
-            for service in self.log_services_off:
-                try:
-                    response = requests.get(service)
-                except requests.exceptions.RequestException:
-                    continue
-                if response.status_code == self.success:
-                    self.add_logging_service(service)
-                    restored.append(service)
-            for service in restored:
-                self.log_services_off.remove(service)
-            restored = []
-            for service in self.msg_services_off:
-                try:
-                    response = requests.get(service)
-                except requests.exceptions.RequestException:
-                    continue
-                if response.status_code == self.success:
-                    self.add_msg_service(service)
-                    restored.append(service)
-            for service in restored:
-                self.msg_services_off.remove(service)
-
-    def add_logging_service(self, path):
-        self.logging_services.append(path)
-
-    def add_msg_service(self, path):
-        self.message_services.append(path)
+            if (len(self.log_services) != self.log_quant) or (len(self.msg_services) != self.msg_quant):
+                self.register_log_msg()
 
     def remove_log_service(self, path):
-        self.logging_services.remove(path)
-        self.log_services_off.append(path)
+        self.log_services.remove(path)
 
     def remove_msg_service(self, msg_path):
-        self.message_services.remove(msg_path)
-        self.msg_services_off.append(msg_path)
+        self.msg_services.remove(msg_path)
 
     def get_request(self, service, server_type):
         try:
@@ -153,20 +135,35 @@ class FacadeService(ServiceTemplate):
                 self.remove_msg_service(msg_server)
         return ans
 
+    def register_log_msg(self):
+        all_services = self.consul.agent.services()
+        log_temp, msg_temp = [], []
+        for k in all_services.keys():
+            if all_services[k]['Service'] == 'logging':
+                log_temp.append('http://' + all_services[k]['Address'] + "/")
+            elif all_services[k]['Service'] == 'message':
+                msg_temp.append('http://' + all_services[k]['Address'] + "/")
+        self.log_services, self.msg_services = log_temp, msg_temp
+        self.log_quant, self.msg_quant = len(self.log_services), len(self.msg_services)
+
+    def get_queue_name(self):
+        index, data = self.consul.kv.get('hz-mq')
+        self.queue_name = data['Value'].decode('utf-8')
+
+    def register(self):
+        url = "http://" + self.host + ":" + self.port + "/health"
+        address = self.host + ":" + self.port
+        self.consul.agent.service.register(name='facade', service_id=self.name, address=address,
+                                           check=consul.Check.http(url=url, interval='30s'))
+
 
 def main():
-    service = FacadeService()
-    if len(sys.argv) == 1:
-        service.add_logging_service(beautify_address(LOGGING_SERVICE_HOST, LOGGING_SERVICE_PORT))
-        service.add_msg_service(beautify_address(MESSAGE_SERVICE_HOST, MESSAGE_SERVICE_PORT))
-    elif len(sys.argv) == 3:
-        log_services = sys.argv[1].split(",")
-        msg_services = sys.argv[2].split(",")
-        for i in log_services:
-            service.add_logging_service(i)
-        for j in msg_services:
-            service.add_msg_service(j)
-    service.run(FACADE_SERVICE_HOST, FACADE_SERVICE_PORT)
+    if len(sys.argv) != 4:
+        print('Please enter only number, host and port separated with spaces')
+    else:
+        n, host, port = sys.argv[1], sys.argv[2], sys.argv[3]
+    service = FacadeService(n, host, port)
+    service.run()
 
 
 if __name__ == "__main__":

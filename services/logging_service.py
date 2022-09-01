@@ -1,50 +1,74 @@
-from template import ServiceTemplate, FACADE_SERVICE_HOST, FACADE_SERVICE_PORT, LOGGING_SERVICE_HOST, \
-    LOGGING_SERVICE_PORT, STORAGE_NODE_FOR_1, beautify_address
+from template import ServiceTemplate
 from flask import request, make_response
 from msg_tool.msg_storage import ServiceNotAvailable, DistributedMap
 import sys
+import consul
 
 
-class LoggingServer(ServiceTemplate):
-    def __init__(self, n, node):
-        super().__init__("LoggingService"+str(n))
-        self.storage = DistributedMap(node, "HZ_map")
-        self.facade_service = None
+class LoggingService(ServiceTemplate):
+    def __init__(self, n, host, port):
+        super().__init__("LoggingService"+str(n), host, port)
+        self.consul = consul.Consul()
+        self.n = n
+        self.map_name, self. map_node = None, None
+        self.facades = []
+        self.map_data()
+        self.dmap = DistributedMap(self.map_node, self.map_name)
+        self.register()
+        self.register_facade()
+        self.success = 200
+        self.internal_error = 500
 
         @self.app.route("/", methods=['POST', 'GET'])
         def logging():
-            internal_error = 500
-            success = 200
             if request.method == 'POST':
                 uuid = request.json["uuid"]
                 msg = request.json["msg"]
                 try:
-                    self.storage.save_msg(uuid, msg)
+                    self.dmap.save_msg(uuid, msg)
                     print(msg)
-                    return make_response("Posted successfully", success)
+                    return make_response("Posted successfully", self.success)
                 except KeyError as err:
                     return make_response(str(err), 409)
                 except ServiceNotAvailable as e:
-                    return make_response(str(e), internal_error)
+                    return make_response(str(e), self.internal_error)
             elif request.method == 'GET':
                 try:
-                    return make_response(self.storage.get_all_msgs(), success)
+                    return make_response(self.storage.get_all_msgs(), self.success)
                 except ServiceNotAvailable as e:
-                    return make_response(str(e), internal_error)
+                    return make_response(str(e), self.internal_error)
 
-    def add_facade_service(self, path):
-        self.facade_service = path
+        @self.app.route("/health", methods=['GET'])
+        def health():
+            return make_response("healthy", 200)
+
+    def register_facade(self):
+        all = self.consul.agent.services()
+        for k in all.keys():
+            if all[k]['Service'] == 'facade':
+                self.facade.append('http://' + all[k]['Address'] + '/')
+
+    def register(self):
+        url = "http://" + self.host + ":" + self.port + "/health"
+        address = self.host + ":" + self.port
+        self.consul.agent.service.register(name='logging', service_id=self.name, address=address,
+                                           check=consul.Check.http(url=url, interval='30s'))
+
+    def map_data(self):
+        index, data = self.consul.kv.get('hz-map')
+        self.map_name = data['Value'].decode('utf-8')
+
+        index, data = self.consul.kv.get('hz.client_' + str(self.n))
+        self.map_node = data['Value'].decode('utf-8')
 
 
 def main():
-    if len(sys.argv) == 1:
-        service = LoggingServer(1, STORAGE_NODE_FOR_1)
-        port = LOGGING_SERVICE_PORT
-    elif len(sys.argv) == 4:
-        service = LoggingServer(sys.argv[1], sys.argv[2])
-        port = sys.argv[3]
-    service.add_facade_service(beautify_address(FACADE_SERVICE_HOST, FACADE_SERVICE_PORT))
-    service.run(LOGGING_SERVICE_HOST, port)
+    if len(sys.argv) != 4:
+        print('Please enter only number, host and port separated with spaces')
+    else:
+        n, host, port = sys.argv[1], sys.argv[2], sys.argv[3]
+    service = LoggingService(n, host, port)
+    service.run()
 
 
 if __name__ == "__main__":

@@ -1,5 +1,4 @@
-from template import ServiceTemplate, FACADE_SERVICE_HOST, FACADE_SERVICE_PORT, MESSAGE_SERVICE_HOST, \
-    MESSAGE_SERVICE_PORT, beautify_address
+from template import ServiceTemplate
 from flask import request, make_response
 from threading import Thread
 from msg_tool.msg_storage import MessageStorage, DistributedQueue, ServiceNotAvailable
@@ -45,14 +44,12 @@ class MessageService(ServiceTemplate):
 
 
 def main():
-    if len(sys.argv) == 1:
-        service = MessageService(1)
-        port = MESSAGE_SERVICE_PORT
-    elif len(sys.argv) == 3:
-        service = MessageService(sys.argv[1])
-        port = sys.argv[2]
-    service.add_facade_service(beautify_address(FACADE_SERVICE_HOST, FACADE_SERVICE_PORT))
-    service.run(MESSAGE_SERVICE_HOST, port)
+    if len(sys.argv) != 4:
+        print('Please enter only number, host and port separated with spaces')
+    else:
+        n, host, port = sys.argv[1], sys.argv[2], sys.argv[3]
+    service = MessageService(n, host, port)
+    service.run()
 
 
 if __name__ == "__main__":
